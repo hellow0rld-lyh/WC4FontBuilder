@@ -5,7 +5,7 @@ from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib import TTFont
 
-from wc4_font_builder.subset import FontBuildError, build_subset, write_report
+from wc4_font_builder.subset import FontBuildError, analyze_subset, build_subset, write_report
 
 
 def _empty_glyph():
@@ -123,3 +123,27 @@ def test_wc4_profile_reports_missing_optional_without_failing(tmp_path: Path):
     assert report.missingRequired == []
     assert report.layoutFeatures == ["calt", "ccmp", "liga", "vert", "vrt2", "kern", "vpal"]
     assert "BASE" in report.dropTables
+
+
+def test_analysis_reports_coverage_without_building(tmp_path: Path):
+    source = tmp_path / "full.otf"
+    make_font(source)
+
+    report = analyze_subset(
+        source_font=source,
+        text_codepoints={0x41, 0x56FD},
+        optional_text_codepoints={0x20B9},
+        explicit_extra_codepoints={0x42},
+        safe_codepoints={0x20},
+        scanned_file_count=2,
+        scanned_text_characters=7,
+        subset_profile="wc4",
+    )
+
+    assert report.analysisOnly is True
+    assert report.requestedCodepoints == 5
+    assert report.sourceSupportedRequestedCodepoints == 3
+    assert [item["codepoint"] for item in report.missingRequired] == ["U+56FD"]
+    assert [item["codepoint"] for item in report.missingOptionalText] == ["U+20B9"]
+    assert report.missingSafe == []
+    assert not (tmp_path / "subset.otf").exists()

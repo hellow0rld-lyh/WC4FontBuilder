@@ -35,6 +35,34 @@ class MetricSnapshot:
 
 
 @dataclass(frozen=True)
+class AnalysisReport:
+    sourceFont: str
+    sourceBytes: int
+    sourceGlyphs: int
+    scannedFileCount: int
+    scannedTextCharacters: int
+    uniqueTextCodepoints: int
+    optionalTextCodepoints: int
+    explicitExtraCodepoints: int
+    safeCodepoints: int
+    requestedCodepoints: int
+    sourceSupportedRequestedCodepoints: int
+    missingRequired: list[dict[str, str]]
+    missingOptionalText: list[dict[str, str]]
+    missingSafe: list[dict[str, str]]
+    subsetProfile: str
+    layoutFeatures: list[str]
+    dropTables: list[str]
+    fontToolsVersion: str
+    retainGids: bool
+    sourceMetrics: MetricSnapshot
+    analysisOnly: bool = True
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class BuildReport:
     sourceFont: str
     outputFont: str
@@ -68,6 +96,17 @@ class BuildReport:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class _Coverage:
+    required: frozenset[int]
+    optionalText: frozenset[int]
+    requested: frozenset[int]
+    keep: frozenset[int]
+    missingRequired: frozenset[int]
+    missingOptionalText: frozenset[int]
+    missingSafe: frozenset[int]
+
+
 def best_cmap(font: TTFont) -> dict[int, str]:
     cmap = font.getBestCmap()
     return cmap or {}
@@ -90,8 +129,30 @@ def snapshot_metrics(font: TTFont) -> MetricSnapshot:
     )
 
 
-def _descriptions(values: set[int]) -> list[dict[str, str]]:
+def _descriptions(values: set[int] | frozenset[int]) -> list[dict[str, str]]:
     return [describe_codepoint(value) for value in sorted(values)]
+
+
+def _coverage(
+    *,
+    source_available: set[int],
+    text_codepoints: set[int],
+    optional_text_codepoints: set[int] | None,
+    explicit_extra_codepoints: set[int],
+    safe_codepoints: set[int],
+) -> _Coverage:
+    required = set(text_codepoints) | set(explicit_extra_codepoints)
+    optional_text = set(optional_text_codepoints or ()) - required
+    requested = required | optional_text | set(safe_codepoints)
+    return _Coverage(
+        required=frozenset(required),
+        optionalText=frozenset(optional_text),
+        requested=frozenset(requested),
+        keep=frozenset(requested & source_available),
+        missingRequired=frozenset(required - source_available),
+        missingOptionalText=frozenset(optional_text - source_available),
+        missingSafe=frozenset(set(safe_codepoints) - source_available),
+    )
 
 
 def make_subset_options(profile: str, *, retain_gids: bool) -> subset.Options:
@@ -120,6 +181,66 @@ def make_subset_options(profile: str, *, retain_gids: bool) -> subset.Options:
     options.retain_gids = retain_gids
     options.recalc_timestamp = False
     return options
+
+
+def analyze_subset(
+    *,
+    source_font: Path,
+    text_codepoints: set[int],
+    optional_text_codepoints: set[int] | None = None,
+    explicit_extra_codepoints: set[int],
+    safe_codepoints: set[int],
+    scanned_file_count: int,
+    scanned_text_characters: int,
+    subset_profile: str = "generic",
+    retain_gids: bool = False,
+) -> AnalysisReport:
+    source_font = source_font.expanduser().resolve()
+    if not source_font.is_file():
+        raise FontBuildError(f"source font does not exist: {source_font}")
+
+    try:
+        font = TTFont(source_font, recalcTimestamp=False)
+    except Exception as exc:
+        raise FontBuildError(f"failed to open source font: {exc}") from exc
+
+    try:
+        source_cmap = best_cmap(font)
+        source_metrics = snapshot_metrics(font)
+        source_glyphs = len(font.getGlyphOrder())
+    finally:
+        font.close()
+
+    coverage = _coverage(
+        source_available=set(source_cmap),
+        text_codepoints=text_codepoints,
+        optional_text_codepoints=optional_text_codepoints,
+        explicit_extra_codepoints=explicit_extra_codepoints,
+        safe_codepoints=safe_codepoints,
+    )
+    options = make_subset_options(subset_profile, retain_gids=retain_gids)
+    return AnalysisReport(
+        sourceFont=str(source_font),
+        sourceBytes=source_font.stat().st_size,
+        sourceGlyphs=source_glyphs,
+        scannedFileCount=scanned_file_count,
+        scannedTextCharacters=scanned_text_characters,
+        uniqueTextCodepoints=len(text_codepoints),
+        optionalTextCodepoints=len(coverage.optionalText),
+        explicitExtraCodepoints=len(explicit_extra_codepoints),
+        safeCodepoints=len(safe_codepoints),
+        requestedCodepoints=len(coverage.requested),
+        sourceSupportedRequestedCodepoints=len(coverage.keep),
+        missingRequired=_descriptions(coverage.missingRequired),
+        missingOptionalText=_descriptions(coverage.missingOptionalText),
+        missingSafe=_descriptions(coverage.missingSafe),
+        subsetProfile=subset_profile,
+        layoutFeatures=list(options.layout_features),
+        dropTables=list(options.drop_tables),
+        fontToolsVersion=fontTools.__version__,
+        retainGids=retain_gids,
+        sourceMetrics=source_metrics,
+    )
 
 
 def build_subset(
@@ -151,24 +272,22 @@ def build_subset(
     source_cmap = best_cmap(font)
     source_metrics = snapshot_metrics(font)
     source_glyphs = len(font.getGlyphOrder())
-    required = set(text_codepoints) | set(explicit_extra_codepoints)
-    optional_text = set(optional_text_codepoints or ()) - required
-    requested = required | optional_text | set(safe_codepoints)
-    source_available = set(source_cmap)
-    missing_required = required - source_available
-    missing_optional_text = optional_text - source_available
-    missing_safe = set(safe_codepoints) - source_available
-    if missing_required and not allow_missing:
+    coverage = _coverage(
+        source_available=set(source_cmap),
+        text_codepoints=text_codepoints,
+        optional_text_codepoints=optional_text_codepoints,
+        explicit_extra_codepoints=explicit_extra_codepoints,
+        safe_codepoints=safe_codepoints,
+    )
+    if coverage.missingRequired and not allow_missing:
         font.close()
-        details = ", ".join(item["codepoint"] for item in _descriptions(missing_required)[:20])
-        suffix = " ..." if len(missing_required) > 20 else ""
-        raise FontBuildError(f"source font is missing {len(missing_required)} required codepoints: {details}{suffix}")
-
-    keep = requested & source_available
+        details = ", ".join(item["codepoint"] for item in _descriptions(coverage.missingRequired)[:20])
+        suffix = " ..." if len(coverage.missingRequired) > 20 else ""
+        raise FontBuildError(f"source font is missing {len(coverage.missingRequired)} required codepoints: {details}{suffix}")
     options = make_subset_options(subset_profile, retain_gids=retain_gids)
 
     subsetter = subset.Subsetter(options=options)
-    subsetter.populate(unicodes=sorted(keep))
+    subsetter.populate(unicodes=sorted(coverage.keep))
     try:
         subsetter.subset(font)
         output_font.parent.mkdir(parents=True, exist_ok=True)
@@ -187,7 +306,7 @@ def build_subset(
     output_glyphs = len(output.getGlyphOrder())
     output.close()
 
-    missing_output = keep - set(output_cmap)
+    missing_output = set(coverage.keep) - set(output_cmap)
     if missing_output:
         raise FontBuildError(
             "subset output lost expected codepoints: "
@@ -208,14 +327,14 @@ def build_subset(
         scannedFileCount=scanned_file_count,
         scannedTextCharacters=scanned_text_characters,
         uniqueTextCodepoints=len(text_codepoints),
-        optionalTextCodepoints=len(optional_text),
+        optionalTextCodepoints=len(coverage.optionalText),
         explicitExtraCodepoints=len(explicit_extra_codepoints),
         safeCodepoints=len(safe_codepoints),
-        requestedCodepoints=len(requested),
-        retainedRequestedCodepoints=len(keep),
-        missingRequired=_descriptions(missing_required),
-        missingOptionalText=_descriptions(missing_optional_text),
-        missingSafe=_descriptions(missing_safe),
+        requestedCodepoints=len(coverage.requested),
+        retainedRequestedCodepoints=len(coverage.keep),
+        missingRequired=_descriptions(coverage.missingRequired),
+        missingOptionalText=_descriptions(coverage.missingOptionalText),
+        missingSafe=_descriptions(coverage.missingSafe),
         outputMissingExpected=_descriptions(missing_output),
         subsetProfile=subset_profile,
         layoutFeatures=list(options.layout_features),
@@ -228,7 +347,7 @@ def build_subset(
     )
 
 
-def write_report(report: BuildReport, path: Path) -> None:
+def write_report(report: AnalysisReport | BuildReport, path: Path) -> None:
     resolved = path.expanduser().resolve()
     resolved.parent.mkdir(parents=True, exist_ok=True)
     resolved.write_text(

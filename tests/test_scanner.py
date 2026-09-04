@@ -70,3 +70,25 @@ def test_wc4_malformed_non_comment_line_fails_closed(tmp_path: Path):
 
     with pytest.raises(TextScanError, match="without '='"):
         scan_wc4_stringtables([path])
+
+
+def test_multiple_file_and_directory_inputs_are_merged(tmp_path: Path):
+    direct = tmp_path / "direct.txt"
+    direct.write_text("简A", encoding="utf-8")
+    folder = tmp_path / "texts"
+    folder.mkdir()
+    (folder / "nested.txt").write_text("繁B", encoding="utf-8")
+
+    result = scan_text([direct, folder])
+
+    assert {"简", "A", "繁", "B"} <= set(result.characters)
+    assert len(result.files) == 2
+
+
+def test_wc4_profile_uses_actual_characters_not_language_slot_name(tmp_path: Path):
+    path = tmp_path / "stringtable_tw.ini"
+    path.write_text("name=中国與中國\n", encoding="utf-8")
+
+    result = scan_wc4_stringtables([path])
+
+    assert {"中", "国", "與", "國"} <= set(result.characters)

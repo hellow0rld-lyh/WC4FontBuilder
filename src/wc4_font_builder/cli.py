@@ -12,7 +12,7 @@ from .scanner import (
     scan_text,
     scan_wc4_stringtables,
 )
-from .subset import FontBuildError, SUBSET_PROFILES, build_subset, write_report
+from .subset import FontBuildError, SUBSET_PROFILES, analyze_subset, build_subset, write_report
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,9 +21,20 @@ def build_parser() -> argparse.ArgumentParser:
         description="Build a compact OpenType font from the text actually used by a game/mod.",
     )
     parser.add_argument("--font", required=True, type=Path, help="full source OTF/TTF")
-    parser.add_argument("--text", required=True, action="append", type=Path, help="text file or directory; repeatable")
-    parser.add_argument("--output", required=True, type=Path, help="output subset font")
+    parser.add_argument(
+        "--text",
+        required=True,
+        action="append",
+        type=Path,
+        help="text file or directory; repeatable and files/directories may be mixed",
+    )
+    parser.add_argument("--output", type=Path, help="output subset font; required unless --analyze is used")
     parser.add_argument("--report", type=Path, help="optional JSON report path")
+    parser.add_argument(
+        "--analyze",
+        action="store_true",
+        help="analyze character coverage without writing a subset font",
+    )
     parser.add_argument(
         "--profile",
         choices=SUBSET_PROFILES,
@@ -31,7 +42,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="generic scanner/subsetter or WC4 stringtable/stock-compatible profile",
     )
     parser.add_argument("--extra-chars-file", action="append", default=[], type=Path, help="file containing runtime/dynamic characters")
-    parser.add_argument("--extra-char", action="append", default=[], help="literal extra characters; repeatable")
+    parser.add_argument(
+        "--extra-char",
+        "--extra-chars",
+        dest="extra_char",
+        action="append",
+        default=[],
+        help="literal extra characters; repeatable",
+    )
     parser.add_argument(
         "--safe-set",
         choices=sorted(SAFE_SETS),
@@ -48,7 +66,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _format_summary(report) -> str:
+def _format_build_summary(report) -> str:
     return (
         f"profile={report.subsetProfile} "
         f"files={report.scannedFileCount} "
@@ -61,8 +79,30 @@ def _format_summary(report) -> str:
     )
 
 
+def _format_analysis_summary(report) -> str:
+    return (
+        f"analysis=true "
+        f"profile={report.subsetProfile} "
+        f"files={report.scannedFileCount} "
+        f"text_codepoints={report.uniqueTextCodepoints} "
+        f"optional_text_codepoints={report.optionalTextCodepoints} "
+        f"extra_codepoints={report.explicitExtraCodepoints} "
+        f"safe_codepoints={report.safeCodepoints} "
+        f"requested_codepoints={report.requestedCodepoints} "
+        f"supported_codepoints={report.sourceSupportedRequestedCodepoints} "
+        f"missing_required={len(report.missingRequired)} "
+        f"missing_optional={len(report.missingOptionalText)} "
+        f"missing_safe={len(report.missingSafe)} "
+        f"source_glyphs={report.sourceGlyphs} "
+        f"source_bytes={report.sourceBytes}"
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if not args.analyze and args.output is None:
+        parser.error("--output is required unless --analyze is used")
     extensions = {item.strip() for item in args.extensions.split(",") if item.strip()}
     try:
         if args.profile == "wc4":
@@ -75,9 +115,8 @@ def main(argv: list[str] | None = None) -> int:
         extra_from_files = scan_extra_character_files(args.extra_chars_file)
         literal_extra = glyph_relevant_characters("".join(args.extra_char))
         extra_chars = set(extra_from_files) | set(literal_extra)
-        report = build_subset(
+        common = dict(
             source_font=args.font,
-            output_font=args.output,
             text_codepoints=codepoints(set(scan.characters)),
             optional_text_codepoints=codepoints(set(scan.optional_characters)),
             explicit_extra_codepoints=codepoints(extra_chars),
@@ -86,11 +125,20 @@ def main(argv: list[str] | None = None) -> int:
             scanned_text_characters=scan.total_text_characters,
             subset_profile=args.profile,
             retain_gids=args.retain_gids,
-            allow_missing=args.allow_missing,
         )
+        if args.analyze:
+            report = analyze_subset(**common)
+            summary = _format_analysis_summary(report)
+        else:
+            report = build_subset(
+                output_font=args.output,
+                allow_missing=args.allow_missing,
+                **common,
+            )
+            summary = _format_build_summary(report)
         if args.report:
             write_report(report, args.report)
-        print(_format_summary(report))
+        print(summary)
         if report.missingRequired:
             print(f"warning: source font missing {len(report.missingRequired)} required codepoints", file=sys.stderr)
         if report.missingOptionalText:

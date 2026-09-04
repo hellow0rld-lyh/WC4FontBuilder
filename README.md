@@ -43,17 +43,28 @@ WC4 原版兼容模式使用 `--profile wc4`：
 
 WC4 profile 不会把整个 `assets` 目录中的 XML/JSON 注释和资源标记机械加入字库。显式传入文件时要求 INI；传入目录时只发现 `stringtable_*.ini`。普通 `key=value` 的 value 是必需字符，源字体缺失时 fail closed；特殊 `char=` 行是动态/可选字符，缺失只记录并提示。注释和 key 不参与字符集。WC4 profile 默认 `--safe-set none`，因为原版动态字符已经由 `char=` 声明；仍可显式覆盖 `--safe-set`。
 
-多个输入可以重复 `--text`：
+多个输入可以重复 `--text`，文件和目录可以混合：
 
 ```powershell
 wc4-font-build --font full.otf --text data --text localization.json --output subset.otf
 ```
 
-额外动态字符：
+字符提取不根据“简中/繁中”等语言槽位或文件名做转换或过滤，只保留输入文本实际出现的 Unicode 字符。因此即使 `stringtable_tw.ini` 实际装的是简体中文，或同一份文本简繁混用，也会按真实内容生成字库。
+
+额外动态字符既可以直接传入，也可以从文件读取：
 
 ```powershell
+wc4-font-build --font full.otf --text data --extra-chars "0123456789+-" --output subset.otf
 wc4-font-build --font full.otf --text data --extra-chars-file extra_chars.txt --output subset.otf
 ```
+
+只分析、不生成字体：
+
+```powershell
+wc4-font-build --analyze --profile wc4 --font full.otf --text stringtable_cn.ini --report analysis.json
+```
+
+`--analyze` 不要求 `--output`，会报告扫描文件数、Required/Dynamic/Extra/Safe 字符数量、源字体实际覆盖数量和缺失字符，但不会写出 subset OTF。正常构建模式仍必须指定 `--output`。
 
 兼容选项：
 
@@ -75,7 +86,7 @@ wc4-font-build --font full.otf --text data --extra-chars-file extra_chars.txt --
 
 ## 报告
 
-报告包含源/输出字节数、缩减比例、源/输出 glyph 数、扫描文件数、唯一必需文本字符数、仅动态/可选字符数、安全字符数、请求字符总数、源字体缺失的必需/可选/安全字符、输出覆盖校验、实际 subset profile、layout feature/drop-table 配置、fontTools 版本以及关键 metrics 对比。
+构建报告包含源/输出字节数、缩减比例、源/输出 glyph 数、扫描文件数、唯一必需文本字符数、仅动态/可选字符数、显式额外字符数、安全字符数、请求字符总数、源字体缺失的必需/可选/安全字符、输出覆盖校验、实际 subset profile、layout feature/drop-table 配置、fontTools 版本以及关键 metrics 对比。分析模式报告同样记录字符来源和缺字情况，但只读取源字体，不创建输出字体。
 
 ## WC4 真实语料验证
 
