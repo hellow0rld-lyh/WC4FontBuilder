@@ -98,3 +98,28 @@ def test_missing_required_codepoint_fails_closed(tmp_path: Path):
             scanned_file_count=1,
             scanned_text_characters=2,
         )
+
+
+def test_wc4_profile_reports_missing_optional_without_failing(tmp_path: Path):
+    source = tmp_path / "full.otf"
+    output = tmp_path / "subset.otf"
+    make_font(source)
+
+    report = build_subset(
+        source_font=source,
+        output_font=output,
+        text_codepoints={0x41, 0x4E2D},
+        optional_text_codepoints={0x20B9},
+        explicit_extra_codepoints=set(),
+        safe_codepoints=set(),
+        scanned_file_count=1,
+        scanned_text_characters=3,
+        subset_profile="wc4",
+    )
+
+    assert report.subsetProfile == "wc4"
+    assert report.optionalTextCodepoints == 1
+    assert [item["codepoint"] for item in report.missingOptionalText] == ["U+20B9"]
+    assert report.missingRequired == []
+    assert report.layoutFeatures == ["calt", "ccmp", "liga", "vert", "vrt2", "kern", "vpal"]
+    assert "BASE" in report.dropTables

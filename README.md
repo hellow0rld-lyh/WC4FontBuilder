@@ -20,6 +20,8 @@ py -m venv .venv
 
 ## 使用
 
+通用模式保持第一版行为：
+
 ```powershell
 .venv\Scripts\wc4-font-build.exe `
   --font C:\path\full.otf `
@@ -27,6 +29,19 @@ py -m venv .venv
   --output C:\path\wc4_subset.otf `
   --report C:\path\wc4_subset.report.json
 ```
+
+WC4 原版兼容模式使用 `--profile wc4`：
+
+```powershell
+.venv\Scripts\wc4-font-build.exe `
+  --profile wc4 `
+  --font C:\path\NotoSansCJKsc-Black.otf `
+  --text C:\path\stringtable_cn.ini `
+  --output C:\path\NotoSans_cn.otf `
+  --report C:\path\NotoSans_cn.report.json
+```
+
+WC4 profile 不会把整个 `assets` 目录中的 XML/JSON 注释和资源标记机械加入字库。显式传入文件时要求 INI；传入目录时只发现 `stringtable_*.ini`。普通 `key=value` 的 value 是必需字符，源字体缺失时 fail closed；特殊 `char=` 行是动态/可选字符，缺失只记录并提示。注释和 key 不参与字符集。WC4 profile 默认 `--safe-set none`，因为原版动态字符已经由 `char=` 声明；仍可显式覆盖 `--safe-set`。
 
 多个输入可以重复 `--text`：
 
@@ -42,7 +57,9 @@ wc4-font-build --font full.otf --text data --extra-chars-file extra_chars.txt --
 
 兼容选项：
 
-- `--safe-set wc4`：默认，小型安全集；
+- `--profile generic`：默认，保持第一版通用扫描与保守 OpenType layout closure；
+- `--profile wc4`：按 WC4 stringtable 语义扫描，并使用从 Android 原版字库实测得到的 stock-like subset 配置；
+- `--safe-set wc4`：generic profile 默认，小型安全集；
 - `--safe-set minimal`：只补可打印 ASCII、NBSP、全角空格；
 - `--safe-set none`：只保留实际文本/显式额外字符；
 - `--retain-gids`：保留 glyph ID 空洞，给依赖稳定 GID 的旧渲染器做兼容试验，会牺牲一部分体积；
@@ -58,7 +75,13 @@ wc4-font-build --font full.otf --text data --extra-chars-file extra_chars.txt --
 
 ## 报告
 
-报告包含源/输出字节数、缩减比例、源/输出 glyph 数、扫描文件数、唯一文本字符数、安全字符数、请求字符总数、源字体缺失的必需字符/安全字符、输出覆盖校验以及关键 metrics 对比。
+报告包含源/输出字节数、缩减比例、源/输出 glyph 数、扫描文件数、唯一必需文本字符数、仅动态/可选字符数、安全字符数、请求字符总数、源字体缺失的必需/可选/安全字符、输出覆盖校验、实际 subset profile、layout feature/drop-table 配置、fontTools 版本以及关键 metrics 对比。
+
+## WC4 真实语料验证
+
+`WC4FontBuilderRealCorpusCompatibility/v1` 已用 Android 1.28 当前中文 `stringtable_cn.ini` 与同代 `Noto Sans CJK SC Black 1.004` 完整母库验证：当前输出为 618,084 bytes / 2,496 glyphs / 2,465 cmap 字符；原版 `NotoSans_cn.otf` 为 615,000 bytes / 2,484 glyphs / 2,453 cmap 字符。输出未移除原版 cmap 字符，只新增当前文本实际需要的 12 个汉字；必需字符缺失为 0，母库本身不覆盖的 9 个 `char=` 动态字符只作为 optional 提示。关键纵向 metrics 保持一致。
+
+用原版 cmap 反向重建时，WC4 profile 得到 614,372 bytes / 2,484 glyphs，glyph order 与原版一致，且 CFF、cmap、name、hmtx、vmtx、VORG 表逐字节一致；GSUB/GPOS 仍有小幅结构差异，因此不能声明生成文件与原版 OTF 逐字节等价。详见 `reports/WC4_REAL_CORPUS_COMPATIBILITY_V1.md`。
 
 ## 当前边界
 
