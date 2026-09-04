@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.otf -text
+*.ttf -text
+*.woff -text
+*.woff2 -text

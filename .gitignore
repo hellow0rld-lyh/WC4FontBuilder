@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+*.otf
+*.ttf
+*.woff
+*.woff2
+reports/*.json
+!tests/fixtures/.gitkeep

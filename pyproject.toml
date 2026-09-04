@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wc4-font-builder"
+version = "0.1.0"
+description = "Text-driven OpenType font subset builder for WC4 mod tooling"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "fonttools>=4.55,<5",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<10",
+]
+
+[project.scripts]
+wc4-font-build = "wc4_font_builder.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
