@@ -90,11 +90,12 @@ the `manifest.json` SHA-256 records. No signing was performed.
 
 ## Remaining blocker / decision
 
-The existing four pre-publication commits contain the author email
-`helloworld-lyh@outlook.com`. They also contain 12 historical machine-path
-occurrences (`<user-path>...` / `<temp-path>...`) even though
-the current tree is sanitized. None are credentials, and a full four-commit
-history scan found no private-key/common-token pattern and no binary blobs.
+All current commits use the configured author email
+`helloworld-lyh@outlook.com`. The four commits predating this publication-prep
+work unit also contain 12 historical machine-path occurrences
+(`<user-path>...` / `<temp-path>...`) even though the current
+tree is sanitized. None are credentials, and the pre-publication history scan
+found no private-key/common-token pattern and no binary blobs.
 
 If the email or historical paths should not become public, sanitize them before
 the first push. Changing existing commits requires a separately authorized local
