@@ -2,7 +2,7 @@
 
 Work-Unit-ID: `WC4FontBuilderRealCorpusCompatibility/v1`
 
-Repository: `<legacy-repo>`
+Repository: `WC4FontBuilder` repository root
 
 ## Scope
 
@@ -14,7 +14,7 @@ This work unit does **not** modify any WC4 product repository, APK, SO, game ass
 
 | Input | Size | SHA-256 |
 | --- | ---: | --- |
-| `<external-input>\NotoSansCJKsc-Black-v1.004.otf` | 17,324,316 B | `4f64a0adc660f0066baf25a361cb5f2206952d3e71d05dcade25088c89857c4d` |
+| External read-only `NotoSansCJKsc-Black-v1.004.otf` | 17,324,316 B | `4f64a0adc660f0066baf25a361cb5f2206952d3e71d05dcade25088c89857c4d` |
 | WC4 Android 1.28 `assets\font\NotoSans_cn.otf` | 615,000 B | `545fa24d0794de8570a1a2fd0aabc1492eb828893bdde09ae360e5a7786b7054` |
 | Current WC4 Android 1.28 `assets\stringtable_cn.ini` | 832,112 B | `526df6148cd147b3f3533b83166c55a1ed72207c1cda849e2dacafd79e663427` |
 
@@ -88,11 +88,11 @@ The local JSON evidence is generated under `build\wc4_real_corpus\NotoSans_cn.re
 - Build: **Passed** — real current-corpus OTF generated locally with zero missing required characters.
 - Desktop renderer acceptance: **NotRun**.
 - APK integration: **NotRun**.
-- Device/game behavior acceptance: **NotRun**.
+- Device/game behavior acceptance: **NotRun in this historical work unit**. A later Android 1.29 renderer acceptance is recorded in `CURRENT_HANDOFF.md` and `README.md`.
 
 ## Remaining Unknown / boundary
 
-The generated OTF has not yet been exercised in the actual WC4 renderer. The remaining compatibility question is behavioral: text rendering, fallback behavior, line/layout behavior, renderer caching, and any hidden GID/layout assumptions must be checked in a separate renderer-acceptance work unit. Static equivalence and successful font generation do not substitute for that acceptance.
+At the time of this work unit, the generated OTF had not yet been exercised in the actual WC4 renderer. That historical boundary was later advanced by a scoped Android 1.29 renderer acceptance; see `CURRENT_HANDOFF.md`. The acceptance remains corpus/path scoped and does not prove every fallback, layout or GID-sensitive boundary.
 
 ## Next work unit
 

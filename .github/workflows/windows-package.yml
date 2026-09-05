@@ -1,0 +1,41 @@
+name: Windows package
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install -e ".[dev]"
+      - name: Canonical tests
+        run: |
+          python -m pytest -q
+          python -m compileall -q src tests
+      - name: Build Windows package
+        run: python tools/build_windows.py
+      - name: Packaged GUI self-test
+        run: build\windows_v1\dist\WC4FontBuilder.exe --self-test
+      - name: Packaged CLI smoke test
+        run: build\windows_v1\dist\wc4-font-build.exe --help
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v7
+        with:
+          path: build/windows_v1/WC4FontBuilder-v*-windows-x64.zip
+          if-no-files-found: error
+          archive: false

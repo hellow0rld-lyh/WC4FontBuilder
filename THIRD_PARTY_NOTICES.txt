@@ -1,0 +1,49 @@
+WC4 Font Builder - Third-Party Notices
+======================================
+
+The WC4 Font Builder source code in this repository is licensed under the MIT
+License. The standalone Windows executables also bundle or embed third-party
+software. The release packaging script copies the corresponding full license
+texts into the `licenses/` directory next to the executables.
+
+Bundled/runtime components
+--------------------------
+
+1. fontTools
+   License: MIT
+   Upstream: https://github.com/fonttools/fonttools
+   Release license files:
+     - licenses/fonttools-LICENSE.txt
+     - licenses/fonttools-LICENSE.external.txt
+
+2. PyInstaller bootloader and runtime support
+   License: GPL-2.0-or-later WITH PyInstaller Bootloader Exception; PyInstaller
+   runtime hooks additionally carry Apache-2.0 terms as described by upstream.
+   Upstream: https://github.com/pyinstaller/pyinstaller
+   Release license file:
+     - licenses/pyinstaller-COPYING.txt
+
+   The PyInstaller Bootloader Exception explicitly permits distributing a
+   combined executable without imposing GPL restrictions on the application
+   solely because the PyInstaller bootloader is embedded in it.
+
+3. Python runtime
+   License: Python Software Foundation License Version 2, plus the additional
+   notices included in the Python distribution license file.
+   Upstream: https://www.python.org/
+   Release license file:
+     - licenses/python-LICENSE.txt
+
+4. Tcl/Tk runtime used by the graphical interface
+   License: Tcl/Tk BSD-style license terms from the Python build environment.
+   Release license file:
+     - licenses/tcl-tk-license.terms
+
+Fonts and game assets
+---------------------
+
+No original/full font binary and no WC4 game asset is distributed by this
+repository. The project MIT License does not grant rights to any font supplied
+by a user, any generated subset of that font, or any game asset. Users are
+responsible for ensuring that their source-font license permits the intended
+use and redistribution of generated subsets.

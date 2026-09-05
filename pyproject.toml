@@ -7,7 +7,23 @@ name = "wc4-font-builder"
 version = "1.0.0"
 description = "Text-driven OpenType font subset builder for WC4 mod tooling"
 readme = "README.md"
+license = "MIT"
+authors = [
+  { name = "WC4 Font Builder contributors" },
+]
 requires-python = ">=3.10"
+keywords = ["fonttools", "opentype", "subset", "wc4", "modding"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Multimedia :: Graphics",
+]
 dependencies = [
   "fonttools>=4.55,<5",
 ]

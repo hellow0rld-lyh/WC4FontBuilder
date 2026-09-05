@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import platform
 import shutil
 import sys
+import tkinter
 import zipfile
+from importlib.metadata import distribution, version
 from pathlib import Path
 
 import PyInstaller.__main__
@@ -67,6 +70,52 @@ def write_usage(path: Path) -> None:
     )
 
 
+def find_distribution_license(distribution_name: str, suffix: str) -> Path:
+    dist = distribution(distribution_name)
+    normalized_suffix = suffix.replace("\\", "/")
+    for item in dist.files or ():
+        normalized = str(item).replace("\\", "/")
+        if normalized.endswith(normalized_suffix):
+            resolved = Path(dist.locate_file(item))
+            if resolved.is_file():
+                return resolved
+    raise RuntimeError(f"license file not found for {distribution_name}: {suffix}")
+
+
+def copy_support_files() -> dict[str, dict[str, object]]:
+    copied: list[Path] = []
+    for source, relative in (
+        (ROOT / "README.md", Path("README.md")),
+        (ROOT / "LICENSE", Path("LICENSE")),
+        (ROOT / "THIRD_PARTY_NOTICES.txt", Path("THIRD_PARTY_NOTICES.txt")),
+        (find_distribution_license("fonttools", "/licenses/LICENSE"), Path("licenses/fonttools-LICENSE.txt")),
+        (
+            find_distribution_license("fonttools", "/licenses/LICENSE.external"),
+            Path("licenses/fonttools-LICENSE.external.txt"),
+        ),
+        (
+            find_distribution_license("pyinstaller", "/licenses/COPYING.txt"),
+            Path("licenses/pyinstaller-COPYING.txt"),
+        ),
+        (Path(sys.base_prefix) / "LICENSE.txt", Path("licenses/python-LICENSE.txt")),
+        (
+            Path(sys.base_prefix) / "tcl" / f"tk{tkinter.TkVersion:.1f}" / "license.terms",
+            Path("licenses/tcl-tk-license.terms"),
+        ),
+    ):
+        if not source.is_file():
+            raise RuntimeError(f"required release support file missing: {source}")
+        destination = PACKAGE / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+        copied.append(destination)
+
+    return {
+        path.relative_to(PACKAGE).as_posix(): {"bytes": path.stat().st_size, "sha256": sha256(path)}
+        for path in copied
+    }
+
+
 def main() -> int:
     for directory in (BUILD_ROOT, DIST, WORK, SPEC, PACKAGE):
         directory.mkdir(parents=True, exist_ok=True)
@@ -79,15 +128,23 @@ def main() -> int:
     shutil.copy2(gui, packaged_gui)
     shutil.copy2(cli, packaged_cli)
     write_usage(PACKAGE / "使用说明.txt")
+    support_files = copy_support_files()
 
     manifest = {
         "product": "WC4 Font Builder",
         "version": __version__,
         "platform": "windows-x64",
+        "buildEnvironment": {
+            "python": platform.python_version(),
+            "tk": str(tkinter.TkVersion),
+            "fontTools": version("fonttools"),
+            "pyInstaller": version("pyinstaller"),
+        },
         "artifacts": {
             packaged_gui.name: {"bytes": packaged_gui.stat().st_size, "sha256": sha256(packaged_gui)},
             packaged_cli.name: {"bytes": packaged_cli.stat().st_size, "sha256": sha256(packaged_cli)},
         },
+        "supportFiles": support_files,
     }
     (PACKAGE / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
@@ -96,8 +153,13 @@ def main() -> int:
     )
 
     with zipfile.ZipFile(ARCHIVE, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for source in sorted(PACKAGE.iterdir(), key=lambda item: item.name.casefold()):
-            archive.write(source, f"{PACKAGE.name}/{source.name}")
+        package_files = sorted(
+            (path for path in PACKAGE.rglob("*") if path.is_file()),
+            key=lambda item: item.relative_to(PACKAGE).as_posix().casefold(),
+        )
+        for source in package_files:
+            relative = source.relative_to(PACKAGE).as_posix()
+            archive.write(source, f"{PACKAGE.name}/{relative}")
 
     result = {
         **manifest,

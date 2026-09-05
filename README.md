@@ -2,6 +2,8 @@
 
 根据游戏/Mod 实际文本，从完整 OTF/TTF 自动生成精简 OpenType 字库。
 
+本仓库只包含工具源码、测试和验证文档，**不包含完整/原始字体二进制，也不包含 WC4 游戏资产**。生成字体是否允许再分发取决于用户所使用源字体自身的许可证。
+
 第一版目标不是“简单按 Unicode 删字形”，而是：
 
 1. 扫描文本目录与文件；
@@ -29,6 +31,8 @@ Windows 用户可以直接使用图形版 `WC4FontBuilder.exe`，不需要手工
 ```
 
 构建产物位于 `build/windows_v1/`，属于本地可丢弃产物，不进入 Git。
+
+正式 Windows ZIP 会同时包含项目 `LICENSE`、`THIRD_PARTY_NOTICES.txt`、完整第三方许可证文本、README、哈希 manifest、GUI 与 CLI 两个可执行文件。
 
 ## 使用
 
@@ -113,3 +117,16 @@ Android 1.29 实际 WC4 已完成一轮字体替换验收：在正确明文基�
 仍需区分范围：这不等于所有语言、所有母字体、所有长文本布局和所有潜在 fallback/GID 边界都已穷尽测试。工具仍保持 fail-closed 缺字策略，并输出报告用于每次新语料/新母字体的覆盖验证。
 
 本仓仍是独立工具仓，不是 WC4 正式四仓之一，也不建立跨仓源码依赖。
+
+## GitHub CI 与 Windows 构建
+
+仓库包含两套 GitHub Actions：
+
+- `CI`：在 Python 3.10 / 3.12 / 3.14 上运行测试、compileall 和 CLI smoke test；
+- `Windows package`：手动触发或推送 `v*` tag 时，在 Windows runner 上构建并验证 Windows ZIP，然后作为 workflow artifact 上传。它**不会自动创建 GitHub Release**。
+
+首次公开仓库和正式 Release 的人工门禁见 `RELEASE_CHECKLIST.md`。
+
+## License
+
+WC4 Font Builder 源码以 MIT License 发布，见 `LICENSE`。Windows 打包版还包含 Python、fontTools、PyInstaller、Tcl/Tk 等第三方组件，其声明和许可证位置见 `THIRD_PARTY_NOTICES.txt`。
