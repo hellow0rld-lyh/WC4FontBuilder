@@ -1,52 +1,80 @@
 # Current Handoff
 
-Work-Unit-ID: WC4FontBuilderInitialUsability/v1
+Work-Unit-ID: WC4FontBuilderWindowsV1Package/v1
 Repository: <repo>
 Product-Or-Route: WC4FontBuilder / standalone-tool
 State: Completed
 
 ## Goal
 
-收口第一版 Mod 字库工作流：不依赖语言标签，接受一个完整源字体和任意多个文本文件/目录，保留现有 WC4 stringtable 有效内容识别，并增加只分析不生成字体的覆盖检查。
+将已通过 WC4 实际渲染验收的文本驱动 subset 核心收口为可直接使用的 Windows v1 工具：保留 CLI，新增中文 GUI，共用同一核心工作流，并生成本地单文件 EXE 工具包。
 
 ## Completion result
 
-- 仓库已迁移到 `<repo>`，仍保持独立 Git 仓，不成为 WC4 主仓源码依赖。
-- `--text` 继续支持重复传入，并明确允许文件与目录混合。
-- 字符提取仍只依据文本实际 Unicode 内容，不根据简中/繁中槽位、文件名做转换或过滤。
-- WC4 profile 继续只扫描 `stringtable_*.ini`；普通 value 为 required，`char=` 为 dynamic/optional，key 与整行注释不进入字体。
-- 已增加 `--extra-chars` 作为现有 `--extra-char` 的直观别名；`--extra-chars-file` 保持可用。
-- 已增加 `--analyze`：不要求 `--output`，只读取源字体并报告字符覆盖、缺失和请求规模，不生成 subset OTF。
-- 正常构建模式仍要求 `--output`，原有 fail-closed 缺字策略和 WC4 subset profile 保持不变。
-- 覆盖计算抽成共享逻辑，分析和实际构建使用同一套 required/optional/extra/safe 集合计算，降低两条路径漂移风险。
-- 新增回归覆盖：分析模式、正常模式 output 必填、文件+目录混合输入、繁中槽名中简繁字符混用、分析覆盖统计。
+- 版本提升为 `1.0.0`。
+- 新增共享 `BuildRequest -> execute()` 工作流；CLI 与 GUI 不再重复实现扫描、extra/safe 字符、coverage、subset 与报告逻辑。
+- 新增中文 Tk GUI：源字体选择、多文本文件/目录输入、WC4/generic profile、输出字体、JSON 报告、额外字符/文件、安全字符集、retain-GID、allow-missing、覆盖分析和正式生成。
+- GUI 的耗时 subset 在工作线程运行；工作线程只写线程安全队列，由 Tk 主线程轮询并更新界面，避免跨线程调用 Tk。
+- 新增 Windows PyInstaller 打包入口，同时生成 `WC4FontBuilder.exe` 图形版和 `wc4-font-build.exe` 命令行版，并写入 `使用说明.txt` 与哈希 manifest。
+- 新增共享工作流回归测试，覆盖 `stringtable_tw.ini` 中简繁混用按实际 Unicode 保留，以及 analysis-only 不写字体。
+- README/VALIDATION 已更新 Windows v1 和实际游戏渲染验收边界。
+
+## Windows package
+
+Local ignored package:
+
+```text
+build/windows_v1/WC4FontBuilder-v1.0.0-windows-x64.zip
+SHA-256: a13d507844b9ae38ed382bae021eb23168bc691a8f63ee22dfa2419fe7d25ebd
+Bytes: 27380388
+
+WC4FontBuilder.exe
+SHA-256: 3e3b4fbdd50a7e211eb246cd485bdadef95b69e6c2bd3f31b5c57cd3128254b3
+Bytes: 15488130
+
+wc4-font-build.exe
+SHA-256: 4d61f9af87d87826863d056a24d844accda43637551430cdc478fa4ab9afcd7d
+Bytes: 12373912
+```
+
+No signing or remote publication was performed.
 
 ## Validation
 
-- `.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider`: 15 passed.
-- `.venv\Scripts\python.exe -m compileall -q src tests`: passed.
-- `git diff --check`: passed.
-- 迁移后 Python import 已确认来自新仓 `<repo>\src`。
-- WC4 真实语料回归已用报告中 SHA-256 完全匹配的 Android 1.28 `stringtable_cn.ini` 与 Noto Sans CJK SC Black 1.004 母库复跑：618,084 B / 2,496 glyphs / 2,465 cmap / required missing 0 / optional missing 9。
-- 本轮回归 OTF SHA-256 为 `93390a8832f974f3391f0d47123a5b1c21c61731ab06a7980b1a38922c2c7783`，与迁移前基线 OTF 完全一致，证明本轮 coverage 重构未改变 WC4 正常构建字节输出。
+- Core pytest after shared-workflow refactor: 17 passed.
+- Python GUI self-test: passed.
+- PyInstaller 6.22.2 / Python 3.14.6 Windows x64 build: passed for GUI and CLI one-file executables.
+- Packaged GUI `--self-test`: passed; it constructs the complete hidden Tk widget tree, runs idle layout, and destroys cleanly.
+- Packaged CLI `--help`: passed.
+- Packaged CLI synthetic WC4-profile build: passed; 1 stringtable, 4 required codepoints, glyphs 8 -> 5, bytes 1032 -> 808, metrics preserved.
+- Reopen of packaged-CLI output: `中/国/國/與` all present in cmap; missingRequired=0.
+- Final canonical pytest/compileall/diff/status checks are required immediately before the local commit.
+
+## Manual renderer/device acceptance
+
+Android 1.29 WC4 manual behavior acceptance: Passed for the tested generated font. The generated subset font was placed into both `NotoSans_cn.otf` and `NotoSans_tw.otf` on the correct plaintext baseline so the visible Traditional Chinese entry necessarily exercised it; operator confirmed displayed characters were all normal.
+
+This proves the tested v1 subset is accepted by the target renderer for that corpus. It does not claim exhaustive coverage of every source font, language, screen layout, fallback path or GID-sensitive boundary.
 
 ## State separation
 
-- Repository relocation: Completed. 旧路径内容已清空；Windows 仍有进程占用旧空目录句柄，空目录本身暂未能删除。
+- Research: Completed for v1 scope.
 - Implementation: Completed.
 - Synthetic/static validation: Passed.
-- Real-corpus regression after this refactor: Passed；输出与上一基线逐字节同 SHA-256。
-- Desktop renderer acceptance: NotRun.
-- APK integration: NotRun.
-- Device/game behavior acceptance: NotRun.
+- Windows package build: Passed.
+- Packaged executable smoke/functional validation: Passed.
+- Android game renderer acceptance: Passed for tested corpus/font path.
+- Windows GUI manual click-through acceptance: NotRun; automated packaged-widget construction passed.
+- Remote publication/release: NotRun / unauthorized.
 
 ## Failure pre-mortem / remaining risk
 
-- 最大剩余风险仍是游戏实际渲染器行为；静态 cmap/metrics 与生成成功不能证明 fallback/cache/GID 行为。
-- `--analyze` 只报告源字体覆盖，不预测 subset 后字节大小；实际大小仍以正式构建结果为准。
-- 对未知普通文本格式，generic profile 仍按文本内容扫描；WC4 INI 应使用 `--profile wc4` 才能排除 key/comment 等无关内容。
-- 原 `.venv\pyvenv.cfg` 的创建命令可能保留旧路径历史字符串，但 editable import 已重新绑定并实测从新仓加载，不影响当前运行。
+- A different full source font can still lack required characters; fail-closed coverage remains mandatory.
+- A future stringtable may introduce characters not present in the previous generated font; rebuild from current text rather than reusing an old subset blindly.
+- Renderer acceptance is scoped to the tested Android 1.29 path; unusual fallback, long-layout, vertical text or stable-GID assumptions can still require focused acceptance.
+- PyInstaller bundles are unsigned; Windows may display reputation/SmartScreen warnings. Signing was intentionally not performed.
+- GUI has automated construction/self-test but no human desktop click-through in this work unit.
 
 ## Next work unit
 
-`WC4FontBuilderRendererAcceptance/v1` — 使用生成的精简 OTF 进入实际 WC4 字体替换/渲染验收，重点验证 fallback、缓存/GID 假设、长文本和新增汉字显示。
+`WC4FontBuilderWindowsGuiManualAcceptance/v1` — optional manual desktop click-through and field-feedback fixes. Core v1 functionality and local Windows package are already complete.

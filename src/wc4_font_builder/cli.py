@@ -4,15 +4,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from .charset import SAFE_SETS, codepoints, glyph_relevant_characters
-from .scanner import (
-    DEFAULT_EXTENSIONS,
-    TextScanError,
-    scan_extra_character_files,
-    scan_text,
-    scan_wc4_stringtables,
-)
-from .subset import FontBuildError, SUBSET_PROFILES, analyze_subset, build_subset, write_report
+from .builder import BuildRequest, execute
+from .charset import SAFE_SETS
+from .scanner import DEFAULT_EXTENSIONS, TextScanError
+from .subset import FontBuildError, SUBSET_PROFILES
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -105,39 +100,23 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--output is required unless --analyze is used")
     extensions = {item.strip() for item in args.extensions.split(",") if item.strip()}
     try:
-        if args.profile == "wc4":
-            scan = scan_wc4_stringtables(args.text)
-            default_safe_set = "none"
-        else:
-            scan = scan_text(args.text, extensions)
-            default_safe_set = "wc4"
-        safe_set_name = args.safe_set or default_safe_set
-        extra_from_files = scan_extra_character_files(args.extra_chars_file)
-        literal_extra = glyph_relevant_characters("".join(args.extra_char))
-        extra_chars = set(extra_from_files) | set(literal_extra)
-        common = dict(
-            source_font=args.font,
-            text_codepoints=codepoints(set(scan.characters)),
-            optional_text_codepoints=codepoints(set(scan.optional_characters)),
-            explicit_extra_codepoints=codepoints(extra_chars),
-            safe_codepoints=codepoints(SAFE_SETS[safe_set_name]),
-            scanned_file_count=len(scan.files),
-            scanned_text_characters=scan.total_text_characters,
-            subset_profile=args.profile,
-            retain_gids=args.retain_gids,
-        )
-        if args.analyze:
-            report = analyze_subset(**common)
-            summary = _format_analysis_summary(report)
-        else:
-            report = build_subset(
+        report = execute(
+            BuildRequest(
+                source_font=args.font,
+                text_inputs=args.text,
                 output_font=args.output,
+                report_path=args.report,
+                analyze_only=args.analyze,
+                profile=args.profile,
+                extra_character_files=args.extra_chars_file,
+                extra_characters="".join(args.extra_char),
+                safe_set=args.safe_set,
+                retain_gids=args.retain_gids,
                 allow_missing=args.allow_missing,
-                **common,
+                extensions=extensions,
             )
-            summary = _format_build_summary(report)
-        if args.report:
-            write_report(report, args.report)
+        )
+        summary = _format_analysis_summary(report) if args.analyze else _format_build_summary(report)
         print(summary)
         if report.missingRequired:
             print(f"warning: source font missing {len(report.missingRequired)} required codepoints", file=sys.stderr)
@@ -149,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
         if report.missingSafe:
             print(f"note: source font lacks {len(report.missingSafe)} optional safe-set codepoints", file=sys.stderr)
         return 0
-    except (TextScanError, FontBuildError) as exc:
+    except (ValueError, TextScanError, FontBuildError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

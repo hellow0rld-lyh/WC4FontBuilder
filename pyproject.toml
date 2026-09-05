@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wc4-font-builder"
-version = "0.1.0"
+version = "1.0.0"
 description = "Text-driven OpenType font subset builder for WC4 mod tooling"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,6 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8,<10",
+  "pyinstaller>=6,<7",
 ]
 
 [project.scripts]

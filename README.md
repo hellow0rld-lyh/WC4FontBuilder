@@ -18,6 +18,18 @@ py -m venv .venv
 .venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
+## Windows v1 工具包
+
+Windows 用户可以直接使用图形版 `WC4FontBuilder.exe`，不需要手工安装 Python。工具包同时附带 `wc4-font-build.exe` 命令行版本。图形版默认选择 `wc4` profile，可添加多个文本文件或目录，支持覆盖分析、正式生成、额外字符、安全字符集、GID 保留实验和 JSON 报告。
+
+仓内构建命令：
+
+```powershell
+.venv\Scripts\python.exe tools\build_windows.py
+```
+
+构建产物位于 `build/windows_v1/`，属于本地可丢弃产物，不进入 Git。
+
 ## 使用
 
 通用模式保持第一版行为：
@@ -94,6 +106,10 @@ wc4-font-build --analyze --profile wc4 --font full.otf --text stringtable_cn.ini
 
 用原版 cmap 反向重建时，WC4 profile 得到 614,372 bytes / 2,484 glyphs，glyph order 与原版一致，且 CFF、cmap、name、hmtx、vmtx、VORG 表逐字节一致；GSUB/GPOS 仍有小幅结构差异，因此不能声明生成文件与原版 OTF 逐字节等价。详见 `reports/WC4_REAL_CORPUS_COMPATIBILITY_V1.md`。
 
-## 当前边界
+## 实际渲染验收与当前边界
 
-这是独立工具仓，不是 WC4 正式四仓之一，也不建立跨仓源码依赖。实际替换进游戏后的排版、fallback、渲染器缓存/GID 假设等必须在后续真实字库验收中验证。
+Android 1.29 实际 WC4 已完成一轮字体替换验收：在正确明文基线测试包中，将生成字体同时放入 `NotoSans_cn.otf` 与 `NotoSans_tw.otf`，通过原版可见的繁中入口进入游戏，人工确认实际显示字符正常。这个结果证明当前 v1 生成的 subset OTF 能被目标游戏渲染器正常加载并显示本轮语料字符。
+
+仍需区分范围：这不等于所有语言、所有母字体、所有长文本布局和所有潜在 fallback/GID 边界都已穷尽测试。工具仍保持 fail-closed 缺字策略，并输出报告用于每次新语料/新母字体的覆盖验证。
+
+本仓仍是独立工具仓，不是 WC4 正式四仓之一，也不建立跨仓源码依赖。
