@@ -22,6 +22,7 @@ For the Windows v1 package work unit, additionally run:
 .venv\Scripts\python.exe tools\build_windows.py
 build\windows_v1\dist\WC4FontBuilder.exe --self-test
 build\windows_v1\dist\wc4-font-build.exe --help
+.venv\Scripts\python.exe tools\verify_windows_release.py build\windows_v1\WC4FontBuilder-v1.0.0-windows-x64.zip
 ```
 
 The packaged CLI must also complete one synthetic WC4-profile subset build and the resulting font must be reopened to verify every requested codepoint remains in cmap. Windows package validation supplements but does not replace the canonical pytest/compileall/diff/status checks.
@@ -41,8 +42,10 @@ build\windows_v1\dist\wc4-font-build.exe --help
 
 The release ZIP must contain the project MIT license, `THIRD_PARTY_NOTICES.txt`,
 README, manifest, both executables, and the full license files copied from the
-installed fontTools, PyInstaller, Python and Tcl/Tk distributions. Verify each
-manifested support-file SHA-256 against the bytes inside the ZIP.
+installed fontTools, PyInstaller, Python and Tcl/Tk distributions. Run
+`tools/verify_windows_release.py` against the exact ZIP to verify required files,
+manifested executable/support-file byte sizes and SHA-256 values. Tag-triggered
+GitHub packaging repeats this verification before creating the GitHub Release.
 
 Before publication, scan the repository (excluding ignored build/venv/cache
 outputs) for private-key/token patterns and machine-specific absolute paths, and

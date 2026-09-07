@@ -28,6 +28,11 @@ dependencies = [
   "fonttools>=4.55,<5",
 ]
 
+[project.urls]
+Homepage = "https://github.com/hellow0rld-lyh/WC4FontBuilder"
+Source = "https://github.com/hellow0rld-lyh/WC4FontBuilder"
+Issues = "https://github.com/hellow0rld-lyh/WC4FontBuilder/issues"
+
 [project.optional-dependencies]
 dev = [
   "pytest>=8,<10",

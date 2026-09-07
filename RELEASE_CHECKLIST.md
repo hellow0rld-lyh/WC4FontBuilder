@@ -1,8 +1,7 @@
 # GitHub / Release Checklist
 
-This repository is prepared for a public GitHub publication, but remote writes,
-history rewriting, signing, tagging and Release publication remain separate
-operations.
+The source repository is already public on GitHub. History rewriting, signing,
+tagging and Release publication remain separately controlled operations.
 
 ## Before the first push
 
@@ -35,10 +34,12 @@ operations.
 6. Confirm the archive contains `LICENSE`, `THIRD_PARTY_NOTICES.txt`, README,
    full third-party license texts, the manifest, GUI executable and CLI
    executable.
-7. Create an annotated or lightweight `v1.0.0` tag only after the release
-   commit is fixed.
-8. Publish a GitHub Release from that tag and attach the exact Windows ZIP.
-9. Put the ZIP SHA-256 in the Release notes.
+7. Push the fixed release commit to `main` and confirm the `CI` workflow passes.
+8. Create and push `v1.0.0` only from that fixed commit. The tag-triggered
+   `Windows package` workflow rebuilds the package, verifies the exact ZIP,
+   creates a SHA-256 checksum file, uploads the workflow artifact, and publishes
+   the GitHub Release with the ZIP and checksum attached.
+9. Confirm the tag workflow succeeds and verify the published Release/tag/assets.
 
 ## Never publish
 
