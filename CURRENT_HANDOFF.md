@@ -3,7 +3,7 @@
 Work-Unit-ID: WC4FontBuilderGitHubFirstPublish/v1
 Repository: WC4FontBuilder repository root
 Product-Or-Route: WC4FontBuilder / standalone-tool
-State: RecoveryCandidate
+State: Completed
 
 ## Goal
 
@@ -98,6 +98,38 @@ this recovery is strictly forward-only. No tag movement/deletion, history rewrit
 signing, destructive cleanup, unrelated credential handling, APK/device action,
 or WC4 product-repository modification is authorized or needed.
 
+## Hosted recovery / publication result
+
+The forward recovery completed successfully without moving or rewriting the
+public tag:
+
+- Recovery commit: `e8efcc7b9fed073e34091dedca551de4cd870d68`.
+- Recovery workflow run: `34112985954` (`Windows package`).
+- Hosted job: `101713236366` (`package`).
+- Hosted workflow conclusion: **success**.
+- `Install build dependencies`: Passed.
+- `Canonical tests`: Passed.
+- `Build Windows package`: Passed.
+- `Packaged GUI self-test`: Passed.
+- `Packaged CLI smoke test`: Passed.
+- `Verify release archive`: Passed.
+- `Upload Windows package`: Passed.
+- `Publish GitHub Release`: Passed.
+- Release publication timestamp: `2026-09-07T10:46:57Z`.
+- Public Release: `WC4 Font Builder v1.0.0`, non-draft and non-prerelease.
+- Published Windows ZIP:
+  `WC4FontBuilder-v1.0.0-windows-x64.zip` (29,385,229 bytes).
+- Hosted ZIP SHA-256:
+  `c65f5b07e3ca2452f9704b6383ba68e3413f82a553655447de88021815da8710`.
+- Published checksum file:
+  `WC4FontBuilder-v1.0.0-windows-x64.zip.sha256.txt`.
+- The checksum file records the exact same hosted ZIP SHA-256 above.
+
+The public `v1.0.0` annotated tag remains fixed at
+`9da99c3b807c30262f93af5ec2f880934e46e803`; the recovery commit is a
+forward-only packaging/license/workflow fix and `git diff v1.0.0 -- src` remains
+empty.
+
 ## State separation
 
 - Product implementation: Completed for v1.0.0.
@@ -106,17 +138,17 @@ or WC4 product-repository modification is authorized or needed.
 - Public source repository / release commit: Published.
 - Final-main CI for release commit: Passed.
 - `v1.0.0` public tag: Published/fixed.
-- First hosted Windows tag workflow: Failed at package build; superseded only if
-  the forward recovery run passes.
-- GitHub Release Windows ZIP/checksum assets: Pending recovery.
+- First hosted Windows tag workflow: Failed at package build; retained as failure
+  evidence and superseded by the successful forward recovery run.
+- Forward recovery Windows workflow: Passed.
+- GitHub Release Windows ZIP/checksum assets: Published and checksum-verified.
 - Signing: NotRun / unsigned by design.
 - Existing Android 1.29 renderer acceptance: Passed for the previously tested
   corpus/path; not repeated by this publication-only work unit.
 
 ## Next boundary
 
-Commit the forward fix with exact message `release: recover v1.0.0 package`, push
-`main`, verify the recovery Windows job is green, verify the public ZIP/checksum
-assets and hosted checksum, then close this work unit with a post-release docs-only
-commit. Stop for any new hosted failure or a higher-risk operation; do not move the
-public v1.0.0 tag.
+`WC4FontBuilderGitHubFirstPublish/v1` is complete. No publication blocker remains.
+Any further feature work, packaging change, signing, new release, or formal WC4
+portfolio integration is a separate work unit and requires its own applicable
+authority/risk decision.
