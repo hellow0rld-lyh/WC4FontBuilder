@@ -1,112 +1,110 @@
 # Current Handoff
 
-Work-Unit-ID: WC4FontBuilderGitHubPublicationPrep/v1
+Work-Unit-ID: WC4FontBuilderGitHistoryPrivacySanitization/v1
 Repository: WC4FontBuilder repository root
 Product-Or-Route: WC4FontBuilder / standalone-tool
 State: Completed
 
 ## Goal
 
-Prepare the completed v1.0.0 source tree and Windows package for a future public
-GitHub first push and GitHub Release without performing any remote write, history
-rewrite, signing or tag creation in this work unit.
+Sanitize machine-specific local paths from the complete unpublished Git history
+before the first public push, while preserving the existing commit-author email
+by explicit user decision. Do not push, tag, sign, publish, or change product
+behavior in this work unit.
 
 ## Completion result
 
-- Added a project MIT `LICENSE`.
-- Added `THIRD_PARTY_NOTICES.txt`, including the important boundary that source
-  fonts/generated font subsets and WC4 assets are not covered by the project MIT
-  license.
-- `pyproject.toml` now exposes MIT license metadata, contributor author metadata,
-  keywords and supported-Python classifiers.
-- Added `RELEASE_CHECKLIST.md` with first-push and v1.0.0 release gates.
-- Added GitHub `CI` workflow for Python 3.10/3.12/3.14.
-- Added Windows-package workflow for manual runs and `v*` tag pushes. The workflow
-  builds and validates the ZIP and uploads a workflow artifact; it does not create
-  a GitHub Release automatically.
-- Current GitHub action majors were checked against upstream on 2026-09-05; the
-  workflows use `actions/checkout@v7`, `actions/setup-python@v7`, and
-  `actions/upload-artifact@v7`.
-- Windows packaging now copies README, project license, third-party notices and
-  full fontTools/PyInstaller/Python/Tcl-Tk license texts into the release ZIP.
-- `manifest.json` records Python/Tk/fontTools/PyInstaller versions plus hashes for
-  executables and release support files.
-- Sanitized machine-specific repository/external-input paths in tracked evidence.
-- Historical real-corpus report now makes clear that its old renderer NotRun state
-  was superseded by the later scoped Android 1.29 renderer acceptance.
-- Governance/authority documents remain tracked; they contain no detected secret
-  material and remain required for future local work units.
+- Started from clean `main` at
+  `258864a42c4a8219db72ede8aba569df054d728b`, with no remote and no release tag.
+- Created and verified an ignored local complete-history recovery bundle at
+  `build/pre_history_sanitize_258864a.bundle` before rewriting history. It is
+  local recovery evidence only and must not be published.
+- Rewrote all six linear pre-publication commits, replacing machine-specific
+  repository, legacy-repository, external-input, and temporary-path strings with
+  semantic placeholders.
+- The rewritten six-commit history ended at pre-closeout HEAD
+  `d097ef5c0d82ee4ce6c83251c3b43fe839682a93` before this handoff update.
+- Commit author identity was preserved on every rewritten commit. All six still
+  use `helloworld-lyh <helloworld-lyh@outlook.com>`.
+- `RELEASE_CHECKLIST.md` now treats author-email privacy and machine-path privacy
+  as independent decisions instead of coupling path sanitization to use of a
+  GitHub `noreply` address.
+- No remote write, tag creation, signing, release publication, system-wide
+  installation, APK/device action, or WC4 product-repository modification was
+  performed.
 
-## Windows package after publication prep
+## Full-history privacy validation
 
-```text
-build/windows_v1/WC4FontBuilder-v1.0.0-windows-x64.zip
-SHA-256: cffe2ed2f7ab8c4826a03337a2dae820074d221ba86b616e813d0627b59c20ca
-Bytes: 27417844
+The rewritten `main` history was scanned commit-by-commit and blob-by-blob:
 
-WC4FontBuilder.exe
-SHA-256: 3e3b4fbdd50a7e211eb246cd485bdadef95b69e6c2bd3f31b5c57cd3128254b3
-Bytes: 15488130
-
-wc4-font-build.exe
-SHA-256: 6f9466bb5707b06825b8d1fe82ae9a01c330aacd8c5de9a17dfcd001f23fd7b4
-Bytes: 12373911
-```
-
-The ZIP contains all required release support/license files and their bytes match
-the `manifest.json` SHA-256 records. No signing was performed.
+- Windows user-profile path pattern: 0 matches.
+- Windows temporary-directory machine-path pattern: 0 matches.
+- Historical local username marker: 0 matches.
+- Unix/macOS user-home path pattern: 0 matches.
+- Remaining Windows absolute strings are only intentional README examples using
+  the neutral `C:\path\...` placeholder.
+- Common private-key, GitHub-token, AWS access-key, OpenAI-key, and generic
+  secret-assignment patterns: 0 matches.
+- Git-tracked OTF/TTF/WOFF/EXE/APK/key/certificate binaries: none.
 
 ## Validation
 
-- Editable package metadata/install after publication metadata changes: Passed.
+- Editable install with `--no-deps --no-build-isolation`: Passed.
 - Canonical pytest: 17 passed.
 - Canonical compileall: Passed.
+- Python GUI full-widget `--self-test`: Passed.
 - Windows package rebuild: Passed.
-- Packaged GUI full-widget `--self-test`: Passed.
+- Packaged GUI `--self-test`: Passed.
 - Packaged CLI `--help`: Passed.
-- Packaged CLI synthetic WC4 build: Passed; `中/国/國/與` all present and
-  `missingRequired=0`.
+- Packaged CLI synthetic WC4 subset build: Passed.
+- Synthetic output reopen: `中/国/國/與` all present; `missingRequired=0`.
 - Release ZIP required-file check: Passed.
 - Release ZIP support-file hash verification against manifest: Passed.
-- Secret/private-key/common-token-pattern scan over publishable worktree: no match.
-- Machine-specific absolute-path scan: only intentional `C:\path\...` README
-  examples remain; user/machine paths were removed from tracked evidence.
-- Git-tracked font/TTF/WOFF/EXE/APK binary check: none.
-- GitHub hosted CI/Windows-package execution: NotRun; requires first remote push.
+
+Current rebuilt Windows artifacts:
+
+```text
+WC4FontBuilder.exe
+SHA-256: 3e3b4fbdd50a7e211eb246cd485bdadef95b69e6c2bd3f31b5c57cd3128254b3
+
+wc4-font-build.exe
+SHA-256: 6f9466bb5707b06825b8d1fe82ae9a01c330aacd8c5de9a17dfcd001f23fd7b4
+
+build/windows_v1/WC4FontBuilder-v1.0.0-windows-x64.zip
+SHA-256: 81fbcde5e1519c81cfbcf55851c65750d8dc74af63555cce685f6c0eac78abc2
+Bytes: 27417844
+```
+
+The two executable hashes are unchanged from publication prep. The rebuilt ZIP
+hash changed because the archive was regenerated; required contents and manifest
+hashes were revalidated.
 
 ## State separation
 
-- Publication-prep research: Completed.
-- Repository/documentation implementation: Completed.
+- Privacy/history research: Completed.
+- Git-history rewrite implementation: Completed.
 - Static/local validation: Passed.
 - Windows build/package validation: Passed.
-- Existing Android renderer behavior acceptance: Passed for the tested corpus/path.
-- GitHub hosted workflow validation: NotRun.
-- Remote repository creation/binding/push: NotRun / unauthorized in this work unit.
-- Git tag / GitHub Release publication: NotRun / unauthorized.
-- Signing: NotRun / unauthorized.
-- Windows GUI human click-through: NotRun; automated packaged widget construction
+- Existing Android 1.29 renderer behavior acceptance: Passed for the previously
+  tested corpus/path; not repeated by this privacy-only work unit.
+- Windows GUI human click-through: NotRun; packaged automated widget self-test
   remains Passed.
+- GitHub hosted workflows: NotRun; repository has not been pushed.
+- Remote repository creation/binding/push: NotRun / unauthorized here.
+- Git tag / GitHub Release publication: NotRun / unauthorized here.
+- Signing: NotRun / unauthorized.
 
 ## Remaining blocker / decision
 
-All current commits use the configured author email
-`helloworld-lyh@outlook.com`. The four commits predating this publication-prep
-work unit also contain 12 historical machine-path occurrences
-(`<user-path>...` / `<temp-path>...`) even though the current
-tree is sanitized. None are credentials, and the pre-publication history scan
-found no private-key/common-token pattern and no binary blobs.
+The Git-history privacy decision is resolved: machine-local paths are sanitized,
+and the existing author email is intentionally retained.
 
-If the email or historical paths should not become public, sanitize them before
-the first push. Changing existing commits requires a separately authorized local
-history rewrite; it was intentionally not performed in this work unit.
-
-There is currently no Git remote and no release tag. The final GitHub owner/repo
-name is therefore intentionally not invented in `pyproject.toml` project URLs.
+The remaining publication decisions are the exact GitHub owner/repository name
+and explicit authorization for remote writes/tag/release publication. Hosted CI
+cannot be validated until the first push occurs.
 
 ## Next work unit
 
-`WC4FontBuilderGitHubFirstPublish/v1` — after explicit remote-write authorization
-and the Git-history privacy decision, bind the exact GitHub repository, push
-`main`, verify hosted CI, create `v1.0.0`, and publish the exact validated Windows
-ZIP as the Release asset.
+`WC4FontBuilderGitHubFirstPublish/v1` — after explicit remote-write authorization,
+bind the exact GitHub repository, push `main`, verify hosted CI, create `v1.0.0`,
+and publish the exact validated Windows ZIP as the Release asset.

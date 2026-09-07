@@ -7,11 +7,13 @@ operations.
 ## Before the first push
 
 1. Decide the final GitHub owner and repository name.
-2. Decide whether the existing commit-author email and historical local path
-   strings may be public. If they should be hidden, perform the explicitly
-   authorized local history rewrite **before** the first push, using a GitHub
-   `noreply` address and sanitized historical documents. Do not rewrite an
-   already-published history just for cosmetic cleanup.
+2. Confirm the commit-author email is intended for public exposure and run a
+   full-history privacy/path scan. Author-email privacy and machine-path privacy
+   are independent decisions: use a GitHub `noreply` address only when the email
+   should be hidden, and sanitize machine-local path strings separately when
+   needed. Any required history rewrite must be explicitly authorized and done
+   **before** the first push. Do not rewrite already-published history merely for
+   cosmetic cleanup.
 3. Create an empty GitHub repository without generating a README, license or
    `.gitignore` on GitHub.
 4. Add the new repository as `origin` and verify the exact URL before pushing.
