@@ -41,11 +41,14 @@ build\windows_v1\dist\wc4-font-build.exe --help
 ```
 
 The release ZIP must contain the project MIT license, `THIRD_PARTY_NOTICES.txt`,
-README, manifest, both executables, and the full license files copied from the
-installed fontTools, PyInstaller, Python and Tcl/Tk distributions. Run
-`tools/verify_windows_release.py` against the exact ZIP to verify required files,
-manifested executable/support-file byte sizes and SHA-256 values. Tag-triggered
-GitHub packaging repeats this verification before creating the GitHub Release.
+README, manifest, both executables, and the full third-party license files.
+fontTools/PyInstaller license texts are resolved from installed package metadata;
+Python 3.14.6 and Tcl/Tk 8.6.15 runtime license texts are tracked under
+`third_party_licenses/` so packaging does not depend on a particular Python
+installation layout. Run `tools/verify_windows_release.py` against the exact ZIP
+to verify required files, manifested executable/support-file byte sizes and
+SHA-256 values. Tag-triggered or explicitly authorized recovery packaging repeats
+this verification before publishing GitHub Release assets.
 
 Before publication, scan the repository (excluding ignored build/venv/cache
 outputs) for private-key/token patterns and machine-specific absolute paths, and

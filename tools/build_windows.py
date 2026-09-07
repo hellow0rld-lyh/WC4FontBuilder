@@ -97,9 +97,12 @@ def copy_support_files() -> dict[str, dict[str, object]]:
             find_distribution_license("pyinstaller", "/licenses/COPYING.txt"),
             Path("licenses/pyinstaller-COPYING.txt"),
         ),
-        (Path(sys.base_prefix) / "LICENSE.txt", Path("licenses/python-LICENSE.txt")),
         (
-            Path(sys.base_prefix) / "tcl" / f"tk{tkinter.TkVersion:.1f}" / "license.terms",
+            ROOT / "third_party_licenses" / "python-LICENSE.txt",
+            Path("licenses/python-LICENSE.txt"),
+        ),
+        (
+            ROOT / "third_party_licenses" / "tcl-tk-license.terms",
             Path("licenses/tcl-tk-license.terms"),
         ),
     ):

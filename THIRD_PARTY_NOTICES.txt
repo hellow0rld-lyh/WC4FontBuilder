@@ -33,11 +33,15 @@ Bundled/runtime components
    Upstream: https://www.python.org/
    Release license file:
      - licenses/python-LICENSE.txt
+   Packaging source: tracked `third_party_licenses/python-LICENSE.txt`, copied
+   from the verified CPython 3.14.6 Windows x64 runtime used for v1 packaging.
 
 4. Tcl/Tk runtime used by the graphical interface
-   License: Tcl/Tk BSD-style license terms from the Python build environment.
+   License: Tcl/Tk BSD-style license terms.
    Release license file:
      - licenses/tcl-tk-license.terms
+   Packaging source: tracked `third_party_licenses/tcl-tk-license.terms`, copied
+   from the verified Tcl/Tk 8.6.15 runtime paired with that Python installation.
 
 Fonts and game assets
 ---------------------

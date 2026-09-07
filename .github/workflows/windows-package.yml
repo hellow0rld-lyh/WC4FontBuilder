@@ -3,6 +3,8 @@ name: Windows package
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - "v*"
 
@@ -11,13 +13,17 @@ permissions:
 
 jobs:
   package:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.ref == 'refs/heads/main' && github.event.head_commit.message == 'release: recover v1.0.0 package')
     runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.14"
+          python-version: "3.14.6"
           cache: pip
       - name: Install build dependencies
         run: |
@@ -26,7 +32,7 @@ jobs:
       - name: Canonical tests
         run: |
           python -m pytest -q
-          python -m compileall -q src tests
+          python -m compileall -q src tests tools
       - name: Build Windows package
         run: python tools/build_windows.py
       - name: Packaged GUI self-test
@@ -46,11 +52,21 @@ jobs:
           if-no-files-found: error
           archive: false
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: >-
+          startsWith(github.ref, 'refs/tags/v') ||
+          (github.ref == 'refs/heads/main' && github.event.head_commit.message == 'release: recover v1.0.0 package')
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0.0' }}
         run: |
           $archive = Get-ChildItem build/windows_v1/WC4FontBuilder-v*-windows-x64.zip
           if ($archive.Count -ne 1) { throw "expected exactly one release archive" }
-          gh release create "${{ github.ref_name }}" $archive.FullName "$($archive.FullName).sha256.txt" --verify-tag --title "WC4 Font Builder ${{ github.ref_name }}" --generate-notes
+          $checksum = "$($archive.FullName).sha256.txt"
+          gh release view "$env:RELEASE_TAG" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload "$env:RELEASE_TAG" $archive.FullName $checksum --clobber
+          } else {
+            gh release create "$env:RELEASE_TAG" $archive.FullName $checksum --verify-tag --title "WC4 Font Builder $env:RELEASE_TAG" --generate-notes
+          }
+          if ($LASTEXITCODE -ne 0) { throw "GitHub Release publication failed" }

@@ -41,6 +41,12 @@ tagging and Release publication remain separately controlled operations.
    the GitHub Release with the ZIP and checksum attached.
 9. Confirm the tag workflow succeeds and verify the published Release/tag/assets.
 
+If a public release tag already exists and its hosted packaging run fails, do not
+move, delete, or recreate the tag as a cosmetic retry. Fix forward on `main`. For
+the one-time v1.0.0 recovery path, only the exact commit message
+`release: recover v1.0.0 package` is permitted to republish/update the v1.0.0
+assets; verify that `src/` remains identical to the public tag before using it.
+
 ## Never publish
 
 - original/full font binaries;
